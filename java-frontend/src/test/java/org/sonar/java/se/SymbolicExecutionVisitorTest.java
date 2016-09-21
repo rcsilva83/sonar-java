@@ -97,15 +97,17 @@ public class SymbolicExecutionVisitorTest {
     assertThat(foo.yields().stream().filter(y -> y.exception).count()).isEqualTo(1);
 
     MethodBehavior qix = getMethodBehavior(sev, "qix");
-    List<MethodYield> qixYield = qix.yields();
-    assertThat(qixYield.stream()
+    List<MethodYield> qixYields = qix.yields();
+    List<MethodYield> qixYieldException = qixYields.stream().filter(y -> y.exception).collect(Collectors.toList());
+    List<MethodYield> qixYieldHappy = qixYields.stream().filter(y -> !y.exception).collect(Collectors.toList());
+    assertThat(qixYields.stream()
       .filter(y -> !y.parametersConstraints[0].isNull())
       .allMatch(y -> y.exception)).isTrue();
-    assertThat(qixYield.stream()
+    assertThat(qixYields.stream()
       .filter(y -> y.parametersConstraints[0].isNull() && y.exception)
       .count()).isEqualTo(1);
 
-    assertThat(qixYield.stream()
+    assertThat(qixYields.stream()
       .filter(y -> !y.exception)
       .allMatch(y -> y.parametersConstraints[0].isNull())).isTrue();
   }

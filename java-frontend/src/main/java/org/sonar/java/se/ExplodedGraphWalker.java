@@ -29,6 +29,7 @@ import com.google.common.collect.Lists;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 import org.sonar.java.cfg.CFG;
+import org.sonar.java.cfg.CFG.Block;
 import org.sonar.java.cfg.LiveVariables;
 import org.sonar.java.matcher.MethodMatcher;
 import org.sonar.java.model.JavaTree;
@@ -318,23 +319,32 @@ public class ExplodedGraphWalker {
       }
     }
     // unconditional jumps, for-statement, switch-statement, synchronized:
+    Set<Block> successors = block.successors();
     if (exitPath) {
       if (block.exitBlock() != null) {
         enqueue(new ExplodedGraph.ProgramPoint(block.exitBlock(), 0), programState, true);
       } else {
-        for (CFG.Block successor : block.successors()) {
+        for (CFG.Block successor : successors) {
           enqueue(new ExplodedGraph.ProgramPoint(successor, 0), programState, true);
         }
       }
 
     } else {
-      for (CFG.Block successor : block.successors()) {
+      if (block.isFinallyBlock() && !containsOnlyMethodExit(successors)) {
+        // remove methodExitblock
+        successors = successors.stream().filter(s -> !s.isMethodExitBlock()).collect(Collectors.toSet());
+      }
+      for (CFG.Block successor : successors) {
         if (!block.isFinallyBlock() || isDirectFlowSuccessorOf(successor, block)) {
           node.happyPath = terminator == null || !terminator.is(Tree.Kind.THROW_STATEMENT);
           enqueue(new ExplodedGraph.ProgramPoint(successor, 0), programState, successor == block.exitBlock());
         }
       }
     }
+  }
+
+  private static boolean containsOnlyMethodExit(Set<Block> successors) {
+    return successors.size() == 1 && successors.stream().filter(Block::isMethodExitBlock).findAny().isPresent();
   }
 
   private static boolean isDirectFlowSuccessorOf(CFG.Block successor, CFG.Block block) {

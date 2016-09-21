@@ -58,6 +58,10 @@ public class MethodBehavior {
       if (resultSV != null) {
         yield.resultIndex = parameterSymbolicValues.indexOf(resultSV);
         yield.resultConstraint = programState.getConstraint(resultSV);
+      } else if (happyPathYield) {
+        // FIXME A resultSV should always be present for these methods at the end of the execution path,
+        // if on a happy path
+        yield.exception = true;
       }
     }
 
