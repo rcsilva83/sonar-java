@@ -500,7 +500,7 @@ public class ExplodedGraphWalker {
 
     programState = unstack.state;
     // Enqueue exceptional paths
-    node.programPoint.block.exceptions().forEach(b -> enqueue(new ExplodedGraph.ProgramPoint(b, 0), programState, !b.isCatchBlock()));
+    node.programPoint.block.exceptions().forEach(b -> enqueueExceptional(new ExplodedGraph.ProgramPoint(b, 0), programState, !b.isCatchBlock()));
 
     // get method behavior for method with known declaration (ie: within the same file)
     MethodBehavior methodInvokedBehavior = null;
@@ -637,7 +637,7 @@ public class ExplodedGraphWalker {
     NewClassTree newClassTree = tree;
     programState = programState.unstackValue(newClassTree.arguments().size()).state;
     // Enqueue exceptional paths
-    node.programPoint.block.exceptions().forEach(b -> enqueue(new ExplodedGraph.ProgramPoint(b, 0), programState, !b.isCatchBlock()));
+    node.programPoint.block.exceptions().forEach(b -> enqueueExceptional(new ExplodedGraph.ProgramPoint(b, 0), programState, !b.isCatchBlock()));
     SymbolicValue svNewClass = constraintManager.createSymbolicValue(newClassTree);
     programState = programState.stackValue(svNewClass);
     programState = svNewClass.setSingleConstraint(programState, ObjectConstraint.NOT_NULL);
@@ -776,11 +776,19 @@ public class ExplodedGraphWalker {
     }
   }
 
-  public void enqueue(ExplodedGraph.ProgramPoint programPoint, ProgramState programState) {
-    enqueue(programPoint, programState, false);
+  public void enqueue(ExplodedGraph.ProgramPoint programPoint, ProgramState programState, boolean exitPath) {
+    enqueue(programPoint, programState, exitPath, true);
   }
 
-  public void enqueue(ExplodedGraph.ProgramPoint programPoint, ProgramState programState, boolean exitPath) {
+  private void enqueue(ExplodedGraph.ProgramPoint programPoint, ProgramState programState) {
+    enqueue(programPoint, programState, false, true);
+  }
+
+  private void enqueueExceptional(ExplodedGraph.ProgramPoint programPoint, ProgramState programState, boolean exitPath) {
+    enqueue(programPoint, programState, exitPath, false);
+  }
+
+  private void enqueue(ExplodedGraph.ProgramPoint programPoint, ProgramState programState, boolean exitPath, boolean happyPath) {
     int nbOfExecution = programState.numberOfTimeVisited(programPoint);
     if (nbOfExecution > MAX_EXEC_PROGRAM_POINT) {
       debugPrint(programState);
@@ -793,7 +801,9 @@ public class ExplodedGraphWalker {
       return;
     }
     cachedNode.exitPath = exitPath;
-    if(node != null) {
+    if (!happyPath) {
+      cachedNode.happyPath = false;
+    } else if (node != null) {
       cachedNode.happyPath = node.happyPath;
     }
     workList.addFirst(cachedNode);
