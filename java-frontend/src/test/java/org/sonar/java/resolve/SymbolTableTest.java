@@ -20,6 +20,7 @@
 package org.sonar.java.resolve;
 
 import com.google.common.collect.Iterables;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -1333,5 +1334,12 @@ public class SymbolTableTest {
     Result result = Result.createFor("DoubleLambda");
     JavaSymbol my = result.symbol("my");
     assertThat(my.usages()).hasSize(2);
+  }
+
+  @Test
+  public void conditional_expression_in_lambda() {
+    Result result = Result.createFor("ConditionalExpressionInLambda");
+    JavaSymbol foo = result.symbol("foo");
+    assertThat(foo.usages()).hasSize(1);
   }
 }
