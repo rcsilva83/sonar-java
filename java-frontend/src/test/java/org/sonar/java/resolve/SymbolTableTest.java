@@ -20,6 +20,7 @@
 package org.sonar.java.resolve;
 
 import com.google.common.collect.Iterables;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -1326,6 +1327,17 @@ public class SymbolTableTest {
     Result result = Result.createFor("ChainedParameterizedMethods");
     List<IdentifierTree> usages = result.symbol("newBounds").usages();
     assertThat(usages).hasSize(1);
+  }
+
+  @Test
+  public void method_reference_as_variable_initializer() {
+    Result result = Result.createFor("MethodReferencesVariableInitializers");
+
+    JavaSymbol invalidate = result.symbol("invalidate");
+    assertThat(invalidate.usages()).hasSize(1);
+
+    JavaSymbol foo = result.symbol("foo");
+    assertThat(foo.usages()).hasSize(1);
   }
 
   @Test
